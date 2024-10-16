@@ -56,7 +56,7 @@ Resources:
         - Action: ["logs:DescribeLogStreams", "logs:CreateLogStream", "logs:PutLogEvents", "logs:CreateLogGroup"] 
           Resource: "*"  
           Effect: Allow         
-        - Action: ["rds:CreateDBSnapshot","rds:DescribeDBInstances","rds:CopyDBSnapshot","rds:DeleteDBSnapshot","rds:ModifyDBSnapshotAttribute","rds:DescribeDBSnapshots"]
+        - Action: ["rds:CreateDBSnapshot","rds:DescribeDBInstances","rds:CopyDBSnapshot","rds:DeleteDBSnapshot","rds:ModifyDBSnapshotAttribute","rds:DescribeDBSnapshots", "rds:AddTagsToResource"]
           Resource: "*" 
           Effect: Allow
         - Action: ["KMS:Decrypt","KMS:DescribeKey","KMS:Encrypt","KMS:GenerateDataKey","KMS:ReEncryptFrom","KMS:ReEncryptTo","KMS:CreateGrant"]
