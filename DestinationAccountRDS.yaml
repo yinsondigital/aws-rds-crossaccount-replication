@@ -385,7 +385,7 @@ Resources:
 
           def get_secret():
               secret_name = os.environ.get("secretname")
-              region_name = "us-east-1"
+              region_name = "ap-southeast-1"
 
               # Create a Secrets Manager client
               session = boto3.session.Session()
@@ -629,7 +629,7 @@ Resources:
           def update_secret(db_instance_identifier):
               secret_name = os.environ.get("secretname")
               db_prefix = os.environ.get("databasename")
-              region_name = "us-east-1"
+              region_name = "ap-southeast-1"
 
               # Find the endpoint name of new cluster
               try:
