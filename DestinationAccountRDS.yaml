@@ -14,19 +14,19 @@ Parameters:
   DBInstanceClass:
     Type: String
     Description: DB Instance Class
-    Default: 'db.m6i.large'
+    Default: 'db.t4g.small'
     MinLength: 1
     MaxLength: 32
 
   Subnetgroups:
     Type: String 
     Description: VPC SubnetGroups where RDS will be restored in (Optional or it will create onde)
-    Default: "rds-xxx-xxxxxx"
+    Default: "rds-private-subnet"
 
   DatabaseName:
     Type: String 
     Description: Name of the database in this account.  
-    Default: "rds-restored-db"
+    Default: "apollo-production-restored"
 
   SecretName:
     Type: String 
