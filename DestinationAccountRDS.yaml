@@ -87,6 +87,9 @@ Resources:
         - Action: ["rds:RestoreDBInstanceFromDBSnapshot","rds:CreateDBInstance","rds:DescribeDBInstances","rds:ModifyDBInstance","rds:DeleteDBInstance","rds:DeleteDBSnapshot","rds:DescribeDBSnapshots","rds:CopyDBSnapshot","rds:AddTagsToResource"]
           Resource: "*" 
           Effect: Allow
+        - Action: ["route53:ChangeResourceRecordSets",]
+          Resource: "*" 
+          Effect: Allow
         - Action: ["KMS:Decrypt","KMS:DescribeKey","KMS:Encrypt", "KMS:GenerateDataKey","KMS:ReEncryptFrom","KMS:ReEncryptTo","KMS:CreateGrant"]
           Resource: "*" 
           Effect: Allow  
@@ -737,8 +740,8 @@ Resources:
                           }
                       ]
                   }
-              )
-              print("Updated Route 53 record")
+                )
+                print("Updated Route 53 record")
             except ClientError as e:
                 raise e
 
