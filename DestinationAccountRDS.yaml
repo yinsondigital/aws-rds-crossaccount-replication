@@ -771,7 +771,7 @@ Resources:
                   raise e
 
               for instance in response["ResourceTagMappingList"]:
-                  dbname=instance["ResourceARN"][38:]
+                  dbname=instance["ResourceARN"].split(':')[-1]
                   logger.info(dbname)
                   s=delete_db_instance(dbname)
                   logger.info(s)
