@@ -597,6 +597,9 @@ Resources:
 
           # Create RDS client
           rds = boto3.client('rds')
+          
+          # Create Route53 DNS client
+          route53 = boto3.client('route53')
               
           def tag_instance(db_version,db_instance_identifier):
               NoOfOlderInstances=os.environ.get("NoOfOlderInstances")
@@ -702,12 +705,19 @@ Resources:
                       # Deal with the exception here, and/or rethrow at your discretion.
                       raise e
 
-          # Create Route53 DNS client
-          route53 = boto3.client('route53')
-
           def update_route53_record(db_instance_identifier):
             hosted_zone_id = os.environ.get("HostedZoneID")
             record_name = os.environ.get("RecordName")
+
+            # Find the endpoint name of new cluster
+            try:
+                response = rds.describe_db_instances(
+                    DBInstanceIdentifier=db_instance_identifier
+                )
+                rds_endpoint=response["DBInstances"][0]["Endpoint"]["Address"]
+                print("Endpoint name --->",rds_endpoint)
+            except ClientError as e:
+                raise e
 
             # Construct request to update the CNAME record
             try:
@@ -722,7 +732,7 @@ Resources:
                                   'Name': record_name,
                                   'Type': 'CNAME',
                                   'TTL': 300,
-                                  'ResourceRecords': [{'Value': db_instance_identifier}]
+                                  'ResourceRecords': [{'Value': rds_endpoint}]
                               }
                           }
                       ]
