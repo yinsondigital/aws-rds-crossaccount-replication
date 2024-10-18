@@ -47,6 +47,16 @@ Parameters:
     Description: Number of older instances that you want to keep for roll back
     Type: Number 
     Default: 2
+
+  HostedZoneID:
+    Type: String
+    Description: Route 53 Hosted Zone ID
+    Default: Z10319842CD1FWV21N1JO
+
+  RecordName:
+    Type: String
+    Description: CNAME record name to map to RDS instance DNS Name
+    Default: apollo-prod-test.ygt.internal
     
 Resources: 
 # Lambda execution role config   
@@ -75,6 +85,9 @@ Resources:
           Resource: "*"  
           Effect: Allow         
         - Action: ["rds:RestoreDBInstanceFromDBSnapshot","rds:CreateDBInstance","rds:DescribeDBInstances","rds:ModifyDBInstance","rds:DeleteDBInstance","rds:DeleteDBSnapshot","rds:DescribeDBSnapshots","rds:CopyDBSnapshot","rds:AddTagsToResource"]
+          Resource: "*" 
+          Effect: Allow
+        - Action: ["route53:ChangeResourceRecordSets"]
           Resource: "*" 
           Effect: Allow
         - Action: ["KMS:Decrypt","KMS:DescribeKey","KMS:Encrypt", "KMS:GenerateDataKey","KMS:ReEncryptFrom","KMS:ReEncryptTo","KMS:CreateGrant"]
@@ -566,6 +579,7 @@ Resources:
 
 # Step 8:  UpdateAWSSecret       
 #This function will swap the rds name with existing rds.
+#Also update the Route 53 record with the new rds name
   UpdateAWSSecret:
     Type: AWS::Lambda::Function
     Properties:
@@ -586,6 +600,9 @@ Resources:
 
           # Create RDS client
           rds = boto3.client('rds')
+          
+          # Create Route53 DNS client
+          route53 = boto3.client('route53')
               
           def tag_instance(db_version,db_instance_identifier):
               NoOfOlderInstances=os.environ.get("NoOfOlderInstances")
@@ -691,12 +708,50 @@ Resources:
                       # Deal with the exception here, and/or rethrow at your discretion.
                       raise e
 
+          def update_route53_record(db_instance_identifier):
+            hosted_zone_id = os.environ.get("HostedZoneID")
+            record_name = os.environ.get("RecordName")
+
+            # Find the endpoint name of new cluster
+            try:
+                response = rds.describe_db_instances(
+                    DBInstanceIdentifier=db_instance_identifier
+                )
+                rds_endpoint=response["DBInstances"][0]["Endpoint"]["Address"]
+                print("Endpoint name --->",rds_endpoint)
+            except ClientError as e:
+                raise e
+
+            # Construct request to update the CNAME record
+            try:
+                response = route53.change_resource_record_sets(
+                  HostedZoneId=hosted_zone_id,
+                  ChangeBatch={
+                      'Comment': 'Updating CNAME record',
+                      'Changes': [
+                          {
+                              'Action': 'UPSERT',
+                              'ResourceRecordSet': {
+                                  'Name': record_name,
+                                  'Type': 'CNAME',
+                                  'TTL': 300,
+                                  'ResourceRecords': [{'Value': rds_endpoint}]
+                              }
+                          }
+                      ]
+                  }
+                )
+                print("Updated Route 53 record")
+            except ClientError as e:
+                raise e
+
           def lambda_handler(event, context):
               # TODO implement
               db_instance_identifier = event["db_instance_identifier"]
               db_version = event["db_version"]
               s=update_secret(db_instance_identifier)
               tag_instance(db_version,db_instance_identifier)
+              update_route53_record(db_instance_identifier)
               return(s)
 
       Description: 'This function will swap the rds name with existing rds'
@@ -708,6 +763,8 @@ Resources:
           secretname : !Ref SecretName 
           NoOfOlderInstances : !Ref NoOfOlderInstances 
           databasename: !Ref DatabaseName
+          HostedZoneID: !Ref HostedZoneID
+          RecordName: !Ref RecordName
 
 # Step 9:  CleanOlderDBInstances       
 #This function will delete tagged rds instances.
